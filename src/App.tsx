@@ -10,7 +10,7 @@ import {
   Sun, Moon, History, Trash2, Copy, Check, 
   Pencil, Keyboard, Eraser, Sparkles, Loader2,
   Undo2, Redo2, Palette, Type, Circle, Save, Image as ImageIcon, Download, XCircle, 
-  Feather, Cloud, Highlighter, ZoomIn, ZoomOut, Move, Target, RefreshCw, Menu
+  Feather, Cloud, Highlighter, ZoomIn, ZoomOut, Move, Target, RefreshCw, Menu, Wrench
 } from 'lucide-react';
 import { evaluate } from 'mathjs';
 import { GoogleGenAI } from "@google/genai";
@@ -120,6 +120,7 @@ export default function App() {
   const [savedSketches, setSavedSketches] = useState<SavedSketch[]>([]);
   const [showGallery, setShowGallery] = useState(false);
   const [showMobileCalc, setShowMobileCalc] = useState(false);
+  const [showToolsMenu, setShowToolsMenu] = useState(false);
 
   // Zoom & Pan State
   const [zoom, setZoom] = useState(1);
@@ -712,152 +713,164 @@ export default function App() {
           )}
         </AnimatePresence>
 
-        {/* Global Toolbar */}
-        <div className={`pointer-events-auto flex items-center gap-1 rounded-3xl border p-1 shadow-2xl backdrop-blur-xl max-w-full overflow-x-auto no-scrollbar scroll-smooth ${isLight ? 'bg-white/90 border-zinc-200' : 'bg-zinc-900/90 border-zinc-800'}`}>
-          <div className="flex items-center gap-1 min-w-max px-1">
-            <ToolbarButton onClick={clear} title="Clear Canvas" icon={<RotateCcw size={18} className="text-orange-500" />} />
-            
-            <div className={`mx-1 h-6 w-px ${isLight ? 'bg-zinc-200' : 'bg-zinc-800'}`} />
-            
-            <div className="flex items-center gap-1">
-              <ToolbarButton 
-                onClick={() => handleZoom(0.1)} 
-                title="Zoom In" 
-                icon={<ZoomIn size={18} />} 
-                disabled={zoom >= 4}
-              />
-              <div className="flex w-10 flex-col items-center justify-center">
-                <span className="text-[10px] font-bold text-zinc-500">{Math.round(zoom * 100)}%</span>
-              </div>
-              <ToolbarButton 
-                onClick={() => handleZoom(-0.1)} 
-                title="Zoom Out" 
-                icon={<ZoomOut size={18} />} 
-                disabled={zoom <= 0.5}
-              />
-              <ToolbarButton 
-                onClick={resetView} 
-                title="Reset View" 
-                icon={<Target size={18} />} 
-              />
-              <ToolbarButton 
-                onClick={() => setIsPanMode(!isPanMode)} 
-                isActive={isPanMode}
-                title="Pan Tool" 
-                icon={<Move size={18} />} 
-              />
-            </div>
-
-            <div className={`mx-1 h-6 w-px ${isLight ? 'bg-zinc-200' : 'bg-zinc-800'}`} />
-            
-            <ToolbarButton onClick={undo} disabled={undoStack.length === 0} title="Undo" icon={<Undo2 size={18} />} />
-            <ToolbarButton onClick={redo} disabled={redoStack.length === 0} title="Redo" icon={<Redo2 size={18} />} />
-
-            <div className={`mx-1 h-6 w-px ${isLight ? 'bg-zinc-200' : 'bg-zinc-800'}`} />
-            
-            <div className="flex items-center gap-1 p-1">
-              {BG_COLORS.map(bg => (
-                <button
-                  key={bg.value}
-                  onClick={() => setBgColor(bg.value)}
-                  title={`Background: ${bg.name}`}
-                  className={`h-6 w-6 rounded-md border-2 transition-all shrink-0 ${bgColor === bg.value ? 'border-emerald-500 scale-110 shadow-sm' : 'border-zinc-500/20'}`}
-                  style={{ backgroundColor: bg.value }}
-                />
-              ))}
-            </div>
-
-            <div className={`mx-1 h-6 w-px ${isLight ? 'bg-zinc-200' : 'bg-zinc-800'}`} />
-
-            <ToolbarButton 
-              onClick={() => { 
-                  setIsEraser(false); 
-                  setShowColorPicker(!showColorPicker); 
-                  setShowSizePicker(false);
-                  setShowBrushPicker(false);
-              }} 
-              isActive={!isEraser && showColorPicker}
-              title="Brush Color"
-              icon={<div className="h-4 w-4 rounded-full border border-zinc-500/40 shadow-inner" style={{ backgroundColor: color }} />} 
-            />
-
-            <div className={`mx-1 h-6 w-px ${isLight ? 'bg-zinc-200' : 'bg-zinc-800'}`} />
-
-            <ToolbarButton 
-              onClick={() => {
-                  setIsEraser(false);
-                  setShowBrushPicker(!showBrushPicker);
-                  setShowColorPicker(false);
-                  setShowSizePicker(false);
-              }} 
-              isActive={!isEraser && showBrushPicker}
-              title="Brush Style"
-              icon={
-                brushStyle === 'pen' ? <Pencil size={18} /> :
-                brushStyle === 'charcoal' ? <Feather size={18} /> :
-                brushStyle === 'marker' ? <Highlighter size={18} /> :
-                <Cloud size={18} />
-              } 
-            />
-
-            <div className={`mx-1 h-6 w-px ${isLight ? 'bg-zinc-200' : 'bg-zinc-800'}`} />
-
-            <ToolbarButton 
-              onClick={() => { 
-                  setShowSizePicker(!showSizePicker); 
-                  setShowColorPicker(false); 
-                  setShowBrushPicker(false);
-              }} 
-              isActive={showSizePicker}
-              title="Brush Size"
-              icon={
-                <div className="relative flex items-center justify-center">
-                  <Circle size={18} className="text-zinc-500" />
-                  <div 
-                    className="absolute rounded-full bg-zinc-500" 
-                    style={{ width: Math.max(2, brushSize * 0.6), height: Math.max(2, brushSize * 0.6) }} 
-                  />
-                </div>
-              } 
-            />
-            
-            <ToolbarButton 
-              onClick={() => { 
-                  setIsEraser(true); 
-                  setShowColorPicker(false); 
-                  setShowSizePicker(false); 
-                  setShowBrushPicker(false);
-              }} 
-              isActive={isEraser}
-              title="Eraser"
-              icon={<Eraser size={18} />} 
-            />
-
-            <div className={`mx-1 h-6 w-px ${isLight ? 'bg-zinc-200' : 'bg-zinc-800'}`} />
-
-            <ToolbarButton 
-              onClick={saveToGallery}
-              title="Save to Gallery"
-              icon={<Save size={18} className="text-blue-500" />} 
-            />
-
-            <div className={`mx-1 h-6 w-px ${isLight ? 'bg-zinc-200' : 'bg-zinc-800'}`} />
-
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={solveSketch}
-              disabled={isSolving}
-              className={`flex items-center gap-2 rounded-[20px] px-6 py-2.5 font-bold transition-all duration-300 shadow-lg shrink-0 ${
-                isSolving 
-                  ? 'bg-zinc-100 text-zinc-400 cursor-not-allowed' 
-                  : 'bg-emerald-500 text-white hover:bg-emerald-400 hover:shadow-emerald-500/20'
-              }`}
+        {/* Tools Menu Popup */}
+        <AnimatePresence>
+          {showToolsMenu && (
+            <motion.div
+              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 20, scale: 0.95 }}
+              className={`pointer-events-auto flex flex-col gap-2 rounded-[24px] border p-3 shadow-2xl backdrop-blur-xl mb-2 w-full max-w-sm ${isLight ? 'bg-white/95 border-zinc-200' : 'bg-zinc-900/95 border-zinc-800'}`}
             >
-              {isSolving ? <Loader2 className="animate-spin" size={18} /> : <Sparkles size={18} />}
-              <span className="text-sm">Solve</span>
-            </motion.button>
-          </div>
+              <div className="flex items-center justify-between px-2 pb-2 border-b border-zinc-500/10">
+                <span className="text-xs font-bold uppercase tracking-widest text-zinc-500">Tools</span>
+                <button onClick={() => setShowToolsMenu(false)} className="text-zinc-500 hover:text-zinc-300">
+                  <X size={16} />
+                </button>
+              </div>
+              
+              <div className="grid grid-cols-5 gap-1 pt-1 justify-items-center">
+                {/* Row 1 */}
+                <ToolbarButton onClick={clear} title="Clear Canvas" icon={<RotateCcw size={18} className="text-orange-500" />} />
+                <ToolbarButton onClick={undo} disabled={undoStack.length === 0} title="Undo" icon={<Undo2 size={18} />} />
+                <ToolbarButton onClick={redo} disabled={redoStack.length === 0} title="Redo" icon={<Redo2 size={18} />} />
+                <ToolbarButton 
+                  onClick={() => setIsPanMode(!isPanMode)} 
+                  isActive={isPanMode}
+                  title="Pan Tool" 
+                  icon={<Move size={18} />} 
+                />
+                <ToolbarButton 
+                  onClick={saveToGallery}
+                  title="Save to Gallery"
+                  icon={<Save size={18} className="text-blue-500" />} 
+                />
+                
+                {/* Row 2 */}
+                <ToolbarButton 
+                  onClick={() => handleZoom(0.1)} 
+                  title="Zoom In" 
+                  icon={<ZoomIn size={18} />} 
+                  disabled={zoom >= 4}
+                />
+                <ToolbarButton 
+                  onClick={resetView} 
+                  title="Reset View" 
+                  icon={<Target size={18} />} 
+                />
+                <ToolbarButton 
+                  onClick={() => handleZoom(-0.1)} 
+                  title="Zoom Out" 
+                  icon={<ZoomOut size={18} />} 
+                  disabled={zoom <= 0.5}
+                />
+                <ToolbarButton 
+                  onClick={() => { 
+                      setIsEraser(false); 
+                      setShowColorPicker(!showColorPicker); 
+                      setShowSizePicker(false);
+                      setShowBrushPicker(false);
+                  }} 
+                  isActive={!isEraser && showColorPicker}
+                  title="Brush Color"
+                  icon={<div className="h-4 w-4 rounded-full border border-zinc-500/40 shadow-inner" style={{ backgroundColor: color }} />} 
+                />
+                <ToolbarButton 
+                  onClick={() => {
+                      setIsEraser(false);
+                      setShowBrushPicker(!showBrushPicker);
+                      setShowColorPicker(false);
+                      setShowSizePicker(false);
+                  }} 
+                  isActive={!isEraser && showBrushPicker}
+                  title="Brush Style"
+                  icon={
+                    brushStyle === 'pen' ? <Pencil size={18} /> :
+                    brushStyle === 'charcoal' ? <Feather size={18} /> :
+                    brushStyle === 'marker' ? <Highlighter size={18} /> :
+                    <Cloud size={18} />
+                  } 
+                />
+
+                {/* Row 3 */}
+                <ToolbarButton 
+                  onClick={() => { 
+                      setShowSizePicker(!showSizePicker); 
+                      setShowColorPicker(false); 
+                      setShowBrushPicker(false);
+                  }} 
+                  isActive={showSizePicker}
+                  title="Brush Size"
+                  icon={
+                    <div className="relative flex items-center justify-center">
+                      <Circle size={18} className="text-zinc-500" />
+                      <div 
+                        className="absolute rounded-full bg-zinc-500" 
+                        style={{ width: Math.max(2, brushSize * 0.6), height: Math.max(2, brushSize * 0.6) }} 
+                      />
+                    </div>
+                  } 
+                />
+                <ToolbarButton 
+                  onClick={() => { 
+                      setIsEraser(true); 
+                      setShowColorPicker(false); 
+                      setShowSizePicker(false); 
+                      setShowBrushPicker(false);
+                  }} 
+                  isActive={isEraser}
+                  title="Eraser"
+                  icon={<Eraser size={18} />} 
+                />
+              </div>
+
+              {/* Background Colors Selection */}
+              <div className="flex items-center gap-2 px-2 py-2 mt-2 bg-black/5 rounded-xl justify-center">
+                <span className="text-[10px] font-bold text-zinc-500 uppercase mr-2">BG</span>
+                {BG_COLORS.map(bg => (
+                  <button
+                    key={bg.value}
+                    onClick={() => setBgColor(bg.value)}
+                    title={`Background: ${bg.name}`}
+                    className={`h-6 w-6 rounded-md border-2 transition-all shrink-0 ${bgColor === bg.value ? 'border-emerald-500 scale-110 shadow-sm' : 'border-zinc-500/20'}`}
+                    style={{ backgroundColor: bg.value }}
+                  />
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Global Toolbar (Mobile Optimized) */}
+        <div className={`pointer-events-auto flex items-center gap-3 rounded-[28px] border p-2 shadow-2xl backdrop-blur-xl w-full max-w-sm justify-between ${isLight ? 'bg-white/90 border-zinc-200' : 'bg-zinc-900/90 border-zinc-800'}`}>
+          <button
+            onClick={() => {
+              setShowToolsMenu(!showToolsMenu);
+              if (showToolsMenu) {
+                setShowBrushPicker(false);
+                setShowColorPicker(false);
+                setShowSizePicker(false);
+              }
+            }}
+            className={`flex h-12 w-12 items-center justify-center rounded-[20px] transition-all duration-200 ${showToolsMenu ? 'bg-zinc-500/20 text-white' : 'bg-zinc-500/5 text-zinc-400 hover:bg-zinc-500/10 hover:text-zinc-200'}`}
+          >
+            <Wrench size={20} />
+          </button>
+          
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={solveSketch}
+            disabled={isSolving}
+            className={`flex-1 flex items-center justify-center gap-2 rounded-[20px] h-12 font-bold transition-all duration-300 shadow-lg ${
+              isSolving 
+                ? 'bg-zinc-100 text-zinc-400 cursor-not-allowed' 
+                : 'bg-emerald-500 text-white hover:bg-emerald-400 hover:shadow-emerald-500/20'
+            }`}
+          >
+            {isSolving ? <Loader2 className="animate-spin" size={20} /> : <Sparkles size={20} />}
+            <span className="text-base tracking-wide">Solve</span>
+          </motion.button>
         </div>
 
         {/* Brush Style Popup */}
